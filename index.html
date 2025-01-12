@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D XO Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #3a3a5e);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      perspective: 800px;
+    }
+    h1 {
+      margin: 0.5em 0;
+    }
+    #menu, #game, #result {
+      display: none;
+      text-align: center;
+    }
+    #menu.active, #game.active, #result.active {
+      display: block;
+    }
+    .btn {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #fff;
+      background: #5a5acb;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #7878f0;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      margin: 20px auto;
+      transform: rotateX(20deg) rotateZ(10deg);
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: #fff;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+    }
+    .cell:hover {
+      transform: scale(1.1);
+      background: #f0f0f0;
+    }
+    .scoreboard {
+      margin: 20px 0;
+      display: flex;
+      justify-content: space-around;
+      width: 80%;
+    }
+    .scoreboard div {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu" class="active">
+    <h1>Welcome to 3D Tic Tac Toe! 🎮</h1>
+    <p>Choose your game mode:</p>
+    <button class="btn" onclick="startGame(1)">1 Player (vs AI 🤖)</button>
+    <button class="btn" onclick="startGame(2)">2 Players 👥</button>
+  </div>
+
+  <div id="game">
+    <h1>Tic Tac Toe</h1>
+    <div class="scoreboard">
+      <div>Player X: <span id="scoreX">0</span></div>
+      <div>Player O: <span id="scoreO">0</span></div>
+    </div>
+    <div id="board"></div>
+    <button class="btn" onclick="resetGame()">Reset Game</button>
+    <button class="btn" onclick="showMenu()">Back to Menu</button>
+  </div>
+
+  <div id="result">
+    <h1 id="winnerMessage"></h1>
+    <button class="btn" onclick="resetGame()">Play Again</button>
+    <button class="btn" onclick="showMenu()">Back to Menu</button>
+  </div>
+
+  <script>
+    const menu = document.getElementById('menu');
+    const game = document.getElementById('game');
+    const result = document.getElementById('result');
+    const board = document.getElementById('board');
+    const scoreX = document.getElementById('scoreX');
+    const scoreO = document.getElementById('scoreO');
+    let currentPlayer = 'X';
+    let scores = { X: 0, O: 0 };
+    let gameMode = 2; // Default to 2 players
+    let boardState = Array(9).fill(null);
+
+    function startGame(mode) {
+      gameMode = mode;
+      menu.classList.remove('active');
+      game.classList.add('active');
+      createBoard();
+    }
+
+    function createBoard() {
+      board.innerHTML = '';
+      boardState.fill(null);
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.onclick = () => makeMove(i);
+        board.appendChild(cell);
+      }
+    }
+
+    function makeMove(index) {
+      if (boardState[index]) return;
+      boardState[index] = currentPlayer;
+      document.querySelector(`.cell[data-index='${index}']`).textContent = currentPlayer;
+      if (checkWin(currentPlayer)) {
+        scores[currentPlayer]++;
+        endGame(`${currentPlayer} Wins! 🎉`);
+      } else if (boardState.every(cell => cell)) {
+        endGame("It's a Tie! 🤝");
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        if (gameMode === 1 && currentPlayer === 'O') aiMove();
+      }
+    }
+
+    function aiMove() {
+      const emptyCells = boardState.map((val, i) => (val ? null : i)).filter(i => i !== null);
+      const randomMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      makeMove(randomMove);
+    }
+
+    function checkWin(player) {
+      const winningCombos = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+        [0, 4, 8], [2, 4, 6]             // Diagonals
+      ];
+      return winningCombos.some(combo => combo.every(i => boardState[i] === player));
+    }
+
+    function endGame(message) {
+      document.getElementById('winnerMessage').textContent = message;
+      scoreX.textContent = scores.X;
+      scoreO.textContent = scores.O;
+      game.classList.remove('active');
+      result.classList.add('active');
+    }
+
+    function resetGame() {
+      currentPlayer = 'X';
+      createBoard();
+      game.classList.add('active');
+      result.classList.remove('active');
+    }
+
+    function showMenu() {
+      game.classList.remove('active');
+      result.classList.remove('active');
+      menu.classList.add('active');
+    }
+  </script>
+</body>
+</html>
